@@ -1,42 +1,42 @@
 server:
   port: 8081
 
-### ?? ??? ???? applcation ??? ???? Form Login? ?? oauth2 ??? ?? ??? ?????
+### 해당 설정을 등록하면 application 접근시 시큐리티 Form Login이 아닌 oauth2 서버를 통한 인증을 처리합니다
 spring:
   security:
     oauth2:
       client:
-        ######### ????? ?? #########
+        ######### 클라이언트 설정 #########
         registration:
           # unique key
           keycloak:
-            # Oauth 2.0 ?? ?? ??
+            # Oauth 2.0 권한 부여 타입
             authorization-grant-type: authorization_code
-            # ????? ?? ????? ???
+            # 인가서버에 등록 클라이언트 아이디
             client-id: oauth2-client-app
-            # ????? ?? (???? ??? ???)
+            # 클라이언트 이름 (자유롭게 적으면 됩니다)
             client-name: oauth2-client-app
-            # ????? ???
+            # 클라이언트 시크릿
             client-secret: 6DXU8UzsWxOypCOqbeVjLq0sUaQMculC
-            # ?????? ?? ?? ?? ? ?????? ????? ?? ?? (????? ?? ?? ??? ???)
+            # 인가서버에서 권한 코드 부여 후 클라이언트로 리다이렉트 하는 위치 (인가서버에 등록 되어 있어야 합니다)
             redirect-uri: http://localhost:8081/login/oauth2/code/ceycloak
-            # ????? ???? ?? ?? (client_secret_basic, client_secret_post)
+            # 클라이언트 자격증명 전송 방식 (client_secret_basic, client_secret_post)
             client-authentication-method: client_secret_basic
-            # ??? ?? ?? ??
+            # 리소스 접근 제한 범위
             scope: openid,email
-        ######### ?? ?? ?? #########
+        ######### 인가 서버 설정 #########
         provider:
           # unique key
           keycloak:
-              # Oauth 2.0 ?? ?? ?? ?? ???
-              authorization-uri: http://localhost:8080/realms/oauth2/protocol/openid-connect/auth
-              # ??? ??? ?? (Base Uri)
-              issuer-uri: http://localhost:8080/realms/oauth2
-              # Oauth 2.0 JwtSetUri ?? ???
-              jwk-set-uri: http://localhost:8080/realms/oauth2/protocol/openid-connect/certs
-              # Oauth 2.0 ?? ?? ???
-              token-uri: http://localhost:8080/realms/oauth2/protocol/openid-connect/token
-              # Oauth 2.0 userInfo ?? ???
-              user-info-uri: http://localhost:8080/realms/oauth2/protocol/openid-connect/userinfo
-              # Oauth 2.0 ????? ???? Key
-              user-name-attribute: preferred_username
+            # Oauth 2.0 권한 코드 부여 엔드 포인트
+            authorization-uri: http://localhost:8080/realms/oauth2/protocol/openid-connect/auth
+            # 서비스 공급자 위치 (Base Uri)
+            issuer-uri: http://localhost:8080/realms/oauth2
+            # Oauth 2.0 JwtSetUri 엔드 포인트
+            jwk-set-uri: http://localhost:8080/realms/oauth2/protocol/openid-connect/certs
+            # Oauth 2.0 토큰 엔드 포인트
+            token-uri: http://localhost:8080/realms/oauth2/protocol/openid-connect/token
+            # Oauth 2.0 userInfo 엔드 포인트
+            user-info-uri: http://localhost:8080/realms/oauth2/protocol/openid-connect/userinfo
+            # Oauth 2.0 사용자명을 추출하는 Key
+            user-name-attribute: preferred_username
