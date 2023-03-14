@@ -28,9 +28,17 @@ public class OAuth2ClientConfig {
             .clearAuthentication(true)
             .deleteCookies("JSESSIONID");
 
-        // 로그인페이지 변경
-        //http.oauth2Login(oauth2 -> oauth2.loginPage("/loginPage"));
-        http.oauth2Login(Customizer.withDefaults());
+        // API 커스텀 설정
+        http.oauth2Login(oauth2 -> oauth2
+            // 로그인 페이지
+            .loginPage("/loginPage")
+            // 권한 부여 요청 baseUri (default : /oauth2/authorization)
+            .authorizationEndpoint(authorizationEndpointConfig ->
+                authorizationEndpointConfig.baseUri("/oauth2/v1/authorization"))
+            // 인가 응답 baseUri (application.yml, 인가서버의 정보를 바꿔주어야 오류가 나지 않는다)
+            .redirectionEndpoint(redirectionEndpointConfig ->
+                redirectionEndpointConfig.baseUri("/login/oauth2/code/*"))
+        );
         return http.build();
     }
 
