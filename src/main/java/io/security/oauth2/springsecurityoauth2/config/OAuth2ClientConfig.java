@@ -22,10 +22,22 @@ public class OAuth2ClientConfig {
         http.authorizeHttpRequests(request ->request
             .antMatchers("/loginPage").permitAll()
             .anyRequest().authenticated());
+        http.logout()
+            .logoutSuccessHandler(oidcLogoutSuccessHandler())
+            .invalidateHttpSession(true)
+            .clearAuthentication(true)
+            .deleteCookies("JSESSIONID");
 
         // 로그인페이지 변경
-        http.oauth2Login(oauth2 -> oauth2.loginPage("/loginPage"));
-        //http.oauth2Login(Customizer.withDefaults());
+        //http.oauth2Login(oauth2 -> oauth2.loginPage("/loginPage"));
+        http.oauth2Login(Customizer.withDefaults());
         return http.build();
+    }
+
+    private LogoutSuccessHandler oidcLogoutSuccessHandler() {
+        OidcClientInitiatedLogoutSuccessHandler handler =
+            new OidcClientInitiatedLogoutSuccessHandler(clientRegistrationRepository);
+        handler.setPostLogoutRedirectUri("http://localhost:8081");
+        return handler;
     }
 }
