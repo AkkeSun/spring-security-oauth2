@@ -23,8 +23,31 @@ spring:
             # 클라이언트 자격증명 전송 방식 (client_secret_basic, client_secret_post)
             client-authentication-method: client_secret_basic
             # 리소스 접근 제한 범위
-            scope: profile,email
-            #scope: profile,email,openid
+            #scope: profile,email
+            scope: profile,email,openid
+            # 복수의 클라이언트 선언시 사용할 provider (인가서버)를 선언
+            provider: keycloak
+
+          keycloakWithPKCE:
+            authorization-grant-type: authorization_code
+            client-id: oauth2-client-app2
+            client-name: oauth2-client-app2
+            client-secret: trAmGnzUDC0mDIIbNpuKvGY5rID5i9Hk
+            redirect-uri: http://localhost:8081/login/oauth2/code/keycloak
+            client-authentication-method: client_secret_basic
+            scope: profile,email,openid
+            provider: keycloak
+
+          keycloak2:
+              authorization-grant-type: implicit # 스프링 시큐리티에서 인증처리 미지원 _ 토큰만 발급해준다
+              client-id: oauth2-client-app3
+              client-name: oauth2-client-app3
+              client-secret: 6DXU8UzsWxOypCOqbeVjLq0sUaQMculC
+              redirect-uri: http://localhost:8081/home
+              client-authentication-method: client_secret_basic
+              scope: profile,email,openid
+              provider: keycloak
+
         ######### 인가 서버 설정 #########
         provider:
           # unique key
