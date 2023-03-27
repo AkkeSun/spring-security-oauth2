@@ -10,12 +10,16 @@
     function authorizationCode(){
       window.location = new URL('http://localhost:8081/oauth2/authorization/keycloak');
     }
+    function passwordLogin(){
+      location.href="/oauth2Login?username=sun&password=1234"
+    }
   </script>
 </head>
 <body>
 <div>Welcome</div>
 <form sec:authorize="isAnonymous()" action="#">
   <p><input type="button" onclick="authorizationCode()" value="AuthorizationCode Grant" />
+  <p><input type="button" onclick="passwordLogin()" value="password login" />
 </form>
 </body>
 </html>
