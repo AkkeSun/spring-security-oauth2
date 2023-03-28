@@ -1,5 +1,6 @@
 package io.security.oauth2.springsecurityoauth2.config;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
@@ -25,12 +26,15 @@ public class Oauth2Config {
 
         DefaultOAuth2AuthorizedClientManager auth2AuthorizedClientManager
             = new DefaultOAuth2AuthorizedClientManager(clientRegistrationRepository, oAuth2AuthorizedClientRepository);
+        // 테스트를 위해 토큰이 바로 만료되도록 시간 설정함
         OAuth2AuthorizedClientProvider clientProvider =
             OAuth2AuthorizedClientProviderBuilder.builder()
                 .authorizationCode()
-                .password()
+                .password(passwordGrantBuilder -> passwordGrantBuilder.clockSkew(
+                    Duration.ofSeconds(3600))) // Access Token 유효시간 설정
                 .clientCredentials()
-                .refreshToken()
+                .refreshToken(passwordGrantBuilder -> passwordGrantBuilder.clockSkew(
+                    Duration.ofSeconds(3600))) // Refresh Token 유효시간 설정
                 .build();
 
         auth2AuthorizedClientManager.setAuthorizedClientProvider(clientProvider);

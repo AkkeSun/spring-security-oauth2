@@ -1,5 +1,7 @@
 package io.security.oauth2.springsecurityoauth2.controller;
 
+import java.time.Clock;
+import java.time.Duration;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -17,7 +19,9 @@ import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserServ
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
 import org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizedClientManager;
+import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
+import org.springframework.security.oauth2.core.OAuth2Token;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.stereotype.Controller;
@@ -30,6 +34,8 @@ public class Oauth2ClientController {
 
     private final DefaultOAuth2AuthorizedClientManager auth2AuthorizedClientManager;
 
+    private final Duration cloakSkew = Duration.ofSeconds(3600);
+    private final Clock clock = Clock.systemUTC();
     @GetMapping("/oauth2Login")
     public String oauth2Login(Model model, HttpServletRequest request, HttpServletResponse response){
 
@@ -95,6 +101,53 @@ public class Oauth2ClientController {
         OAuth2AuthorizedClient authorize = auth2AuthorizedClientManager.authorize(oAuth2AuthorizeRequest);
         //System.out.println(authorize.getAccessToken());
         return "redirect:/";
+    }
+
+    // Password 방식으로 Login -> 토큰 유효기간 강제로 만료 시킴 -> Refresh Token 로그인
+    @GetMapping("/refreshToken")
+    public String refreshToken(HttpServletRequest request, HttpServletResponse response){
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        OAuth2AuthorizeRequest oAuth2AuthorizeRequest =
+            OAuth2AuthorizeRequest
+                .withClientRegistrationId("keycloak")
+                .principal(authentication)
+                .attribute(HttpServletRequest.class.getName(), request)
+                .attribute(HttpServletResponse.class.getName(), response)
+                .build();
+
+        OAuth2AuthorizedClient authorize = auth2AuthorizedClientManager.authorize(oAuth2AuthorizeRequest);
+        System.out.println(authorize.getAccessToken().getTokenValue());
+
+        /*
+        // 권한 부여 타입을 변경하지 않고 실행
+        if (authorize != null && hasTokenExpired(authorize.getAccessToken()) && authorize.getRefreshToken() != null) {
+            auth2AuthorizedClientManager.authorize(oAuth2AuthorizeRequest);
+        }
+         */
+
+        // 권한 부여 타입을 변경하고 실행
+        if (authorize != null && hasTokenExpired(authorize.getAccessToken()) && authorize.getRefreshToken() != null) {
+            ClientRegistration clientRegistration = ClientRegistration
+                    .withClientRegistration(authorize.getClientRegistration())
+                    .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+                    .build();
+            authorize = new OAuth2AuthorizedClient(
+                clientRegistration, authorize.getPrincipalName(), authorize.getAccessToken(), authorize.getRefreshToken());
+            oAuth2AuthorizeRequest = OAuth2AuthorizeRequest
+                    .withAuthorizedClient(authorize)
+                    .principal(authentication)
+                    .attribute(HttpServletRequest.class.getName(), request)
+                    .attribute(HttpServletResponse.class.getName(), response)
+                    .build();
+            authorize = auth2AuthorizedClientManager.authorize(oAuth2AuthorizeRequest);
+            System.out.println(authorize.getAccessToken().getTokenValue());
+        }
+        return "redirect:/";
+    }
+
+    private boolean hasTokenExpired(OAuth2Token accessToken) {
+        return this.clock.instant().isAfter(accessToken.getExpiresAt().minus(this.cloakSkew));
     }
 
 
