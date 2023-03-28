@@ -143,6 +143,19 @@ public class Oauth2ClientController {
             authorize = auth2AuthorizedClientManager.authorize(oAuth2AuthorizeRequest);
             System.out.println(authorize.getAccessToken().getTokenValue());
         }
+
+        // 최종 인증 처리 추가
+        if (authorize != null) {
+            OAuth2UserService<OAuth2UserRequest, OAuth2User> oAuth2UserService = new DefaultOAuth2UserService();
+            ClientRegistration clientRegistration = authorize.getClientRegistration();
+            OAuth2AccessToken accessToken = authorize.getAccessToken();
+            OAuth2UserRequest userRequest = new OAuth2UserRequest(clientRegistration, accessToken);
+            OAuth2User oAuth2User = oAuth2UserService.loadUser(userRequest);
+            OAuth2AuthenticationToken oAuth2AuthenticationToken =
+                new OAuth2AuthenticationToken(oAuth2User, oAuth2User.getAuthorities(), clientRegistration.getRegistrationId());
+            SecurityContextHolder.getContext().setAuthentication(oAuth2AuthenticationToken);
+        }
+
         return "redirect:/";
     }
 
