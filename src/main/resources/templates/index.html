@@ -13,6 +13,9 @@
     function passwordLogin(){
       location.href="/oauth2Login?username=sun&password=1234"
     }
+    function clientCredentials(){
+      location.href="/clientCredentials"
+    }
   </script>
 </head>
 <body>
@@ -20,6 +23,7 @@
 <form sec:authorize="isAnonymous()" action="#">
   <p><input type="button" onclick="authorizationCode()" value="AuthorizationCode Grant" />
   <p><input type="button" onclick="passwordLogin()" value="password login" />
+  <p><input type="button" onclick="clientCredentials()" value="client credentials login" />
 </form>
 </body>
 </html>

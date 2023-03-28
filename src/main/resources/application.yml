@@ -10,12 +10,12 @@ spring:
         registration:
           # oauth2Client 는 redirecUrl 이 필요없다
           keycloak:
-            authorization-grant-type: password
+            authorization-grant-type: client_credentials
             client-id: oauth2-client-app3
             client-name: oauth2-client-app3
             client-secret: b5FvOqK3kXIrSp231pqonlNs9uVEafVa
             client-authentication-method: client_secret_basic
-            scope: profile,email,openid
+            # scope: profile,email,openid  -> Client Credentials 은 서버간의 보안과 관련된 통신을 위해 사용하기 때문에 scope 가 필요 없다
             provider: keycloak
 
         ######### 인가 서버 설정 #########

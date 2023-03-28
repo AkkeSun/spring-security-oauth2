@@ -76,6 +76,28 @@ public class Oauth2ClientController {
         return "redirect:/";
     }
 
+
+    @GetMapping("/clientCredentials")
+    public String clientCredentialsLogin(HttpServletRequest request, HttpServletResponse response){
+
+        // 인증받지 않은 Anonymous Token
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        OAuth2AuthorizeRequest oAuth2AuthorizeRequest =
+            OAuth2AuthorizeRequest
+                .withClientRegistrationId("keycloak")
+                .principal(authentication) // 인증객채 등록
+                .attribute(HttpServletRequest.class.getName(), request)
+                .attribute(HttpServletResponse.class.getName(), response)
+                .build();
+
+        // 인가받은 클라이언트 (Client Credentials 은 인가받는게 목적이기 때문에 사용자 인증을 받을 필요가 없으므로 여기서 끝)
+        OAuth2AuthorizedClient authorize = auth2AuthorizedClientManager.authorize(oAuth2AuthorizeRequest);
+        //System.out.println(authorize.getAccessToken());
+        return "redirect:/";
+    }
+
+
     @GetMapping("/logout")
     public String logout(Authentication authentication, HttpServletRequest request, HttpServletResponse response){
         SecurityContextLogoutHandler logoutHandler = new SecurityContextLogoutHandler();
