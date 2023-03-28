@@ -16,6 +16,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.OAuth2AuthorizationSuccessHandler;
 import org.springframework.security.oauth2.client.OAuth2AuthorizeRequest;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
+import org.springframework.security.oauth2.client.annotation.RegisteredOAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
@@ -28,6 +30,7 @@ import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.core.OAuth2Token;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter;
+import org.springframework.web.bind.annotation.GetMapping;
 
 public class CustomOAuth2Filter extends AbstractAuthenticationProcessingFilter {
 
@@ -107,6 +110,49 @@ public class CustomOAuth2Filter extends AbstractAuthenticationProcessingFilter {
             return oAuth2AuthenticationToken;
         }
         return null;
+    }
+
+    @GetMapping("/v2/refreshToken")
+    public String refreshToken(@RegisteredOAuth2AuthorizedClient("keycloak")
+    OAuth2AuthorizedClient authorize, HttpServletRequest request, HttpServletResponse response){
+
+        /*
+        // 위의 어노테이션이 주석부분을 대신 처리해준다
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        OAuth2AuthorizeRequest oAuth2AuthorizeRequest =
+            OAuth2AuthorizeRequest
+                .withClientRegistrationId("keycloak")
+                .principal(authentication)
+                .attribute(HttpServletRequest.class.getName(), request)
+                .attribute(HttpServletResponse.class.getName(), response)
+                .build();
+        OAuth2AuthorizedClient authorize = clientManager.authorize(oAuth2AuthorizeRequest);
+         */
+
+        if (authorize != null && hasTokenExpired(authorize.getAccessToken()) && authorize.getRefreshToken() != null) {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            OAuth2AuthorizeRequest oAuth2AuthorizeRequest =
+                OAuth2AuthorizeRequest
+                    .withClientRegistrationId("keycloak")
+                    .principal(authentication)
+                    .attribute(HttpServletRequest.class.getName(), request)
+                    .attribute(HttpServletResponse.class.getName(), response)
+                    .build();
+            auth2AuthorizedClientManager.authorize(oAuth2AuthorizeRequest);
+        }
+
+        if (authorize != null) {
+            OAuth2UserService<OAuth2UserRequest, OAuth2User> oAuth2UserService = new DefaultOAuth2UserService();
+            ClientRegistration clientRegistration = authorize.getClientRegistration();
+            OAuth2AccessToken accessToken = authorize.getAccessToken();
+            OAuth2UserRequest userRequest = new OAuth2UserRequest(clientRegistration, accessToken);
+            OAuth2User oAuth2User = oAuth2UserService.loadUser(userRequest);
+            OAuth2AuthenticationToken oAuth2AuthenticationToken =
+                new OAuth2AuthenticationToken(oAuth2User, oAuth2User.getAuthorities(), clientRegistration.getRegistrationId());
+            SecurityContextHolder.getContext().setAuthentication(oAuth2AuthenticationToken);
+        }
+
+        return "redirect:/";
     }
 
     private boolean hasTokenExpired(OAuth2Token accessToken) {

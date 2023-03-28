@@ -16,8 +16,8 @@
     function clientCredentials(){
       location.href="/clientCredentials"
     }
-    function refreshTokenLogin(){
-      location.href="/refreshToken?username=sun&password=1234"
+    function refreshTokenLoginV2(){
+      location.href="/v2/refreshToken?username=sun&password=1234"
     }
   </script>
 </head>
@@ -28,6 +28,7 @@
   <p><input type="button" onclick="passwordLogin()" value="password login" />
   <p><input type="button" onclick="clientCredentials()" value="client credentials login" />
   <p><input type="button" onclick="refreshTokenLogin()" value="refresh token login" />
+  <p><input type="button" onclick="refreshTokenLoginV2()" value="refresh token login with Annotation" />
 </form>
 </body>
 </html>

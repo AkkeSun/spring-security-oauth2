@@ -13,6 +13,7 @@ import org.springframework.security.core.authority.mapping.SimpleAuthorityMapper
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.OAuth2AuthorizeRequest;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
+import org.springframework.security.oauth2.client.annotation.RegisteredOAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
@@ -34,6 +35,8 @@ public class Oauth2ClientController {
 
     private final DefaultOAuth2AuthorizedClientManager auth2AuthorizedClientManager;
 
+    private final Duration cloakSkew = Duration.ofSeconds(3600);
+    private final Clock clock = Clock.systemUTC();
     @GetMapping("/oauth2Login")
     public String oauth2Login(Model model, HttpServletRequest request, HttpServletResponse response){
 
@@ -100,6 +103,59 @@ public class Oauth2ClientController {
         //System.out.println(authorize.getAccessToken());
         return "redirect:/";
     }
+
+    @GetMapping("/v2/refreshToken")
+    public String refreshToken(@RegisteredOAuth2AuthorizedClient("keycloak") OAuth2AuthorizedClient authorize,
+        HttpServletRequest request, HttpServletResponse response){
+        /*
+        @RegisteredOAuth2AuthorizedClient 어토네이선이 자동으로 처리해준다
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        OAuth2AuthorizeRequest oAuth2AuthorizeRequest =
+            OAuth2AuthorizeRequest
+                .withClientRegistrationId("keycloak")
+                .principal(authentication)
+                .attribute(HttpServletRequest.class.getName(), request)
+                .attribute(HttpServletResponse.class.getName(), response)
+                .build();
+
+        OAuth2AuthorizedClient authorize = auth2AuthorizedClientManager.authorize(oAuth2AuthorizeRequest);
+        System.out.println(authorize.getAccessToken().getTokenValue());
+        */
+
+        if (authorize != null && hasTokenExpired(authorize.getAccessToken()) && authorize.getRefreshToken() != null) {
+            ClientRegistration clientRegistration = ClientRegistration
+                    .withClientRegistration(authorize.getClientRegistration())
+                    .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+                    .build();
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            authorize = new OAuth2AuthorizedClient(
+                clientRegistration, authorize.getPrincipalName(), authorize.getAccessToken(), authorize.getRefreshToken());
+            OAuth2AuthorizeRequest oAuth2AuthorizeRequest = OAuth2AuthorizeRequest
+                    .withAuthorizedClient(authorize)
+                    .principal(authentication)
+                    .attribute(HttpServletRequest.class.getName(), request)
+                    .attribute(HttpServletResponse.class.getName(), response)
+                    .build();
+            authorize = auth2AuthorizedClientManager.authorize(oAuth2AuthorizeRequest);
+        }
+
+        if (authorize != null) {
+            OAuth2UserService<OAuth2UserRequest, OAuth2User> oAuth2UserService = new DefaultOAuth2UserService();
+            ClientRegistration clientRegistration = authorize.getClientRegistration();
+            OAuth2AccessToken accessToken = authorize.getAccessToken();
+            OAuth2UserRequest userRequest = new OAuth2UserRequest(clientRegistration, accessToken);
+            OAuth2User oAuth2User = oAuth2UserService.loadUser(userRequest);
+            OAuth2AuthenticationToken oAuth2AuthenticationToken =
+                new OAuth2AuthenticationToken(oAuth2User, oAuth2User.getAuthorities(), clientRegistration.getRegistrationId());
+            SecurityContextHolder.getContext().setAuthentication(oAuth2AuthenticationToken);
+        }
+        return "redirect:/";
+    }
+
+    private boolean hasTokenExpired(OAuth2Token accessToken) {
+        return this.clock.instant().isAfter(accessToken.getExpiresAt().minus(this.cloakSkew));
+    }
+
 
     @GetMapping("/logout")
     public String logout(Authentication authentication, HttpServletRequest request, HttpServletResponse response){
