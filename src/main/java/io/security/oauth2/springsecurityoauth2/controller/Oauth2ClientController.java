@@ -34,8 +34,6 @@ public class Oauth2ClientController {
 
     private final DefaultOAuth2AuthorizedClientManager auth2AuthorizedClientManager;
 
-    private final Duration cloakSkew = Duration.ofSeconds(3600);
-    private final Clock clock = Clock.systemUTC();
     @GetMapping("/oauth2Login")
     public String oauth2Login(Model model, HttpServletRequest request, HttpServletResponse response){
 
@@ -102,67 +100,6 @@ public class Oauth2ClientController {
         //System.out.println(authorize.getAccessToken());
         return "redirect:/";
     }
-
-    // Password 방식으로 Login -> 토큰 유효기간 강제로 만료 시킴 -> Refresh Token 로그인
-    @GetMapping("/refreshToken")
-    public String refreshToken(HttpServletRequest request, HttpServletResponse response){
-
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        OAuth2AuthorizeRequest oAuth2AuthorizeRequest =
-            OAuth2AuthorizeRequest
-                .withClientRegistrationId("keycloak")
-                .principal(authentication)
-                .attribute(HttpServletRequest.class.getName(), request)
-                .attribute(HttpServletResponse.class.getName(), response)
-                .build();
-
-        OAuth2AuthorizedClient authorize = auth2AuthorizedClientManager.authorize(oAuth2AuthorizeRequest);
-        System.out.println(authorize.getAccessToken().getTokenValue());
-
-        /*
-        // 권한 부여 타입을 변경하지 않고 실행
-        if (authorize != null && hasTokenExpired(authorize.getAccessToken()) && authorize.getRefreshToken() != null) {
-            auth2AuthorizedClientManager.authorize(oAuth2AuthorizeRequest);
-        }
-         */
-
-        // 권한 부여 타입을 변경하고 실행
-        if (authorize != null && hasTokenExpired(authorize.getAccessToken()) && authorize.getRefreshToken() != null) {
-            ClientRegistration clientRegistration = ClientRegistration
-                    .withClientRegistration(authorize.getClientRegistration())
-                    .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-                    .build();
-            authorize = new OAuth2AuthorizedClient(
-                clientRegistration, authorize.getPrincipalName(), authorize.getAccessToken(), authorize.getRefreshToken());
-            oAuth2AuthorizeRequest = OAuth2AuthorizeRequest
-                    .withAuthorizedClient(authorize)
-                    .principal(authentication)
-                    .attribute(HttpServletRequest.class.getName(), request)
-                    .attribute(HttpServletResponse.class.getName(), response)
-                    .build();
-            authorize = auth2AuthorizedClientManager.authorize(oAuth2AuthorizeRequest);
-            System.out.println(authorize.getAccessToken().getTokenValue());
-        }
-
-        // 최종 인증 처리 추가
-        if (authorize != null) {
-            OAuth2UserService<OAuth2UserRequest, OAuth2User> oAuth2UserService = new DefaultOAuth2UserService();
-            ClientRegistration clientRegistration = authorize.getClientRegistration();
-            OAuth2AccessToken accessToken = authorize.getAccessToken();
-            OAuth2UserRequest userRequest = new OAuth2UserRequest(clientRegistration, accessToken);
-            OAuth2User oAuth2User = oAuth2UserService.loadUser(userRequest);
-            OAuth2AuthenticationToken oAuth2AuthenticationToken =
-                new OAuth2AuthenticationToken(oAuth2User, oAuth2User.getAuthorities(), clientRegistration.getRegistrationId());
-            SecurityContextHolder.getContext().setAuthentication(oAuth2AuthenticationToken);
-        }
-
-        return "redirect:/";
-    }
-
-    private boolean hasTokenExpired(OAuth2Token accessToken) {
-        return this.clock.instant().isAfter(accessToken.getExpiresAt().minus(this.cloakSkew));
-    }
-
 
     @GetMapping("/logout")
     public String logout(Authentication authentication, HttpServletRequest request, HttpServletResponse response){
