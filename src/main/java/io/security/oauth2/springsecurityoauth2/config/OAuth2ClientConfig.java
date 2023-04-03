@@ -13,9 +13,6 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableWebSecurity
 public class OAuth2ClientConfig {
 
-    @Autowired
-    private ClientRegistrationRepository clientRegistrationRepository;
-
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception{
 
@@ -27,15 +24,8 @@ public class OAuth2ClientConfig {
             .clearAuthentication(true)
             .deleteCookies("JSESSIONID")
             .logoutSuccessUrl("/home");
-
-        http.oauth2Login(authLogin ->
-            authLogin.authorizationEndpoint(authEndpoint ->
-                authEndpoint.authorizationRequestResolver(customOAuth2AuthorizationRequestResolver())));
         http.oauth2Login(Customizer.withDefaults());
         return http.build();
     }
 
-    private OAuth2AuthorizationRequestResolver customOAuth2AuthorizationRequestResolver() {
-        return new CustomOAuth2AuthorizationRequestResolver(clientRegistrationRepository, "/oauth2/authorization");
-    }
 }
