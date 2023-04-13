@@ -3,6 +3,7 @@ package io.security.oauth2.springsecurityoauth2.service;
 import io.security.oauth2.springsecurityoauth2.model.ProviderUser;
 import io.security.oauth2.springsecurityoauth2.model.User;
 import io.security.oauth2.springsecurityoauth2.model.authServer.GoogleUser;
+import io.security.oauth2.springsecurityoauth2.model.authServer.KakaoUser;
 import io.security.oauth2.springsecurityoauth2.model.authServer.KeycloakUser;
 import io.security.oauth2.springsecurityoauth2.model.authServer.NaverUser;
 import io.security.oauth2.springsecurityoauth2.repository.UserRepository;
@@ -41,12 +42,12 @@ public abstract class AbstractOAuth2UserService {
         String registrationId = clientRegistration.getRegistrationId();
         if(registrationId.equals("keycloak")){
             return new KeycloakUser(oAuth2User,clientRegistration);
-
-        }else if(registrationId.equals("google")){
+        } else if(registrationId.equals("google")){
             return new GoogleUser(oAuth2User,clientRegistration);
-        }
-        else if(registrationId.equals("naver")){
+        } else if(registrationId.equals("naver")){
             return new NaverUser(oAuth2User,clientRegistration);
+        } else if(registrationId.equals("kakao")){
+            return new KakaoUser(oAuth2User, clientRegistration);
         }
         return null;
     }
