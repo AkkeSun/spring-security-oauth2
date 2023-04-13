@@ -28,7 +28,7 @@ public class OAuth2ClientConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception{
         http.authorizeRequests(request ->request
-            .antMatchers("/api/user").access("hasAnyRole('SCOPE_profile','SCOPE_email')")
+            .antMatchers("/api/user").access("hasAnyRole('SCOPE_email')")
             .antMatchers("/api/oidc").access("hasAnyRole('SCOPE_openid')")
             .antMatchers("/").permitAll()
             .anyRequest().authenticated());

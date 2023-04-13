@@ -33,6 +33,8 @@ public class CustomAuthorityMapper implements GrantedAuthoritiesMapper {
         if (this.prefix.length() > 0 && !name.startsWith(this.prefix)) {
             name = this.prefix + name;
         }
+        // kakao setup
+        name = name.replace("_account_email", "_email");
         return new SimpleGrantedAuthority(name);
     }
 }

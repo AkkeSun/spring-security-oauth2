@@ -1,6 +1,7 @@
 package io.security.oauth2.springsecurityoauth2.controller;
 
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -28,6 +29,11 @@ public class IndexController {
             if(authenticationToken.getAuthorizedClientRegistrationId().equals("naver")){
                 Map<String, Object> response = (Map)attributes.get("response");
                 return (String)response.get("name");
+            }
+            if(authenticationToken.getAuthorizedClientRegistrationId().equals("kakao")){
+                Map<String, Object> response = (Map)attributes.get("kakao_account");
+                Map<String, Object> profile = (Map)response.get("profile");
+                return (String)profile.get("nickname");
             }
             return (String)attributes.get("name");
         }
